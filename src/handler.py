@@ -1,59 +1,45 @@
+"""
+Runpod handler for processing jobs using LlamaCPP or OpenAI engines. This
+module defines an asynchronous handler function that receives job inputs,
+instantiates the appropriate engine based on the job input, and yields
+generated output in a streaming fashion.
+"""
+
+from typing import Any
 import runpod
-from openai import OpenAI
 import os
+from utils import JobInput
+from engine import LlamaCPPEngine, LlamaCPPOpenAIEngine
 
-# Connect to local llama-server (OpenAI-compatible API on port 3098)
-client = OpenAI(
-    base_url="http://localhost:3098/v1",
-    api_key="dummy"  # llama-server doesn't require a valid API key
+# set max concurrency from environment variable or default
+DEFAULT_MAX_CONCURRENCY = 8
+
+max_concurrency = int(os.getenv("MAX_CONCURRENCY", DEFAULT_MAX_CONCURRENCY))
+
+
+async def handler(job: Any):
+    """
+    Asynchronous handler function for processing jobs. It receives a job
+    dictionary, extracts the input, determines the appropriate engine to use
+    (LlamaCPP or OpenAI), and yields generated output in a streaming manner.
+    """
+
+    job_input = JobInput(job["input"])
+    engine_class = (
+        LlamaCPPOpenAIEngine if job_input.openai_route else LlamaCPPEngine
+    )
+    engine = engine_class()
+
+    job = engine.generate(job_input)
+
+    async for batch in job:
+        yield batch
+
+
+runpod.serverless.start(
+    {
+        "handler": handler,
+        "concurrency_modifier": lambda _x: max_concurrency,
+        "return_aggregate_stream": True,
+    }
 )
-
-def handler(job):
-    """Process a RunPod serverless job by forwarding to local llama-server."""
-    job_input = job.get("input", {})
-
-    # Extract request parameters
-    messages = job_input.get("messages", [])
-    model = job_input.get("model", "qwen")
-    max_tokens = job_input.get("max_tokens", 512)
-    temperature = job_input.get("temperature", 0.7)
-    stream = job_input.get("stream", False)
-
-    try:
-        # Forward request to local llama-server
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            stream=stream
-        )
-
-        if stream:
-            return {"error": "Streaming not supported in serverless mode"}
-        
-        # Return response in OpenAI-compatible format
-        return {
-            "id": response.id,
-            "object": "chat.completion",
-            "created": response.created,
-            "model": model,
-            "choices": [{
-                "index": 0,
-                "message": {
-                    "role": "assistant",
-                    "content": response.choices[0].message.content
-                },
-                "finish_reason": response.choices[0].finish_reason
-            }],
-            "usage": {
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens
-            }
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-if __name__ == "__main__":
-    runpod.serverless.start({"handler": handler})
