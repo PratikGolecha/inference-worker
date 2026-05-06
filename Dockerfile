@@ -40,11 +40,14 @@ RUN --mount=type=cache,target=/ccache \
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 
 # Copy TurboQuant binaries and shared libraries from builder
-COPY --from=builder /tmp/llama.cpp/build/bin/llama-server /app/llama-server
-COPY --from=builder /tmp/llama.cpp/build/bin/llama-cli /app/llama-cli
-COPY --from=builder /tmp/llama.cpp/build/bin/libllama*.so* /app/
-COPY --from=builder /tmp/llama.cpp/build/bin/libggml*.so* /app/
-COPY --from=builder /tmp/llama.cpp/build/bin/libmtmd*.so* /app/
+COPY --from=builder /tmp/llama.cpp/build/bin/ /app/
+RUN chmod +x /app/llama-server /app/llama-cli && \
+    ldconfig /app && \
+    ln -sf /app/libllama.so /app/libllama.so.0 && \
+    ln -sf /app/libllama-common.so /app/libllama-common.so.0 && \
+    ln -sf /app/libggml.so /app/libggml.so.0 && \
+    ln -sf /app/libggml-cuda.so /app/libggml-cuda.so.0 && \
+    ln -sf /app/libmtmd.so /app/libmtmd.so.0
 ENV LD_LIBRARY_PATH=/app:$LD_LIBRARY_PATH
 
 ENV PYTHONUNBUFFERED=1
