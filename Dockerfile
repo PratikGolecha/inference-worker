@@ -34,29 +34,36 @@ RUN --mount=type=cache,target=/ccache \
         -DLLAMA_BUILD_EXAMPLES=OFF \
         -DLLAMA_BUILD_TESTS=OFF \
         -DBUILD_SHARED_LIBS=ON \
-        -DCMAKE_INSTALL_PREFIX=/tmp/llama-install \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,--allow-shlib-undefined" && \
-    cmake --build . --config Release -j$(nproc) --target llama-server llama-cli || make -j$(nproc) llama-server llama-cli && \
-    mkdir -p /tmp/llama-install/bin /tmp/llama-install/lib && \
-    cp bin/llama-server bin/llama-cli /tmp/llama-install/bin/ && \
-    find lib/ -name "*.so*" -exec cp {} /tmp/llama-install/lib/ \;
+    cmake --build . --config Release -j$(nproc) --target llama-server llama-cli || make -j$(nproc) llama-server llama-cli
 
 # Runtime stage
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
-# Copy TurboQuant binaries and shared libraries from builder install directory
-COPY --from=builder /tmp/llama-install/bin/ /app/
-COPY --from=builder /tmp/llama-install/lib/ /app/
 
-RUN chmod +x /app/llama-server && \
-    (chmod +x /app/llama-cli 2>/dev/null || true) && \
-    ldconfig /app && \
-    ln -sf /app/libllama.so /app/libllama.so.0 2>/dev/null || true && \
-    ln -sf /app/libllama-common.so /app/libllama-common.so.0 2>/dev/null || true && \
-    ln -sf /app/libggml.so /app/libggml.so.0 2>/dev/null || true && \
-    ln -sf /app/libggml-cuda.so /app/libggml-cuda.so.0 2>/dev/null || true && \
-    ln -sf /app/libmtmd.so /app/libmtmd.so.0 2>/dev/null || true
-ENV LD_LIBRARY_PATH=/app:$LD_LIBRARY_PATH
+# Install runtime dependencies (CRITICAL FIX!)
+# libgomp1 = OpenMP support (llama.cpp needs this)
+# libstdc++6 = C++ standard library (TurboQuant build links against this)
+RUN apt-get update && apt-get install -y \
+    libgomp1 \
+    libstdc++6 \
+    libgcc1 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
+# Copy TurboQuant binaries and shared libraries from builder
+COPY --from=builder /tmp/llama.cpp/build/bin/ /app/
+COPY --from=builder /tmp/llama.cpp/build/lib/ /app/
+
+# Set up library path BEFORE ldconfig
+RUN echo "/app" > /etc/ld.so.conf.d/app.conf && \
+    ldconfig && \
+    chmod +x /app/llama-server && \
+    (chmod +x /app/llama-cli 2>/dev/null || true)
+
+# Verify libraries loaded correctly (diagnostic check at build time)
+RUN ldd /app/llama-server | grep "not found" && echo "ERROR: Missing dependencies!" && exit 1 || echo "✓ All dependencies found"
+
+ENV LD_LIBRARY_PATH=/app:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 ENV PYTHONUNBUFFERED=1
 
 # Set up the working directory
