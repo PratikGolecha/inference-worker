@@ -22,8 +22,6 @@ RUN git clone https://github.com/TheTom/llama-cpp-turboquant.git /tmp/llama.cpp
 # Build with explicit CUDA paths
 # Build with explicit CUDA paths and persistent ccache
 RUN --mount=type=cache,target=/ccache \
-    # Create libcuda.so.1 symlink for linking in build environment
-    ln -sf /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1 && \
     export CCACHE_DIR=/ccache && \
     cd /tmp/llama.cpp && \
     mkdir -p build && cd build && \
@@ -35,7 +33,7 @@ RUN --mount=type=cache,target=/ccache \
         -DGGML_CCACHE=ON \
         -DLLAMA_BUILD_EXAMPLES=OFF \
         -DLLAMA_BUILD_TESTS=OFF \
-        -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/cuda/lib64/stubs" && \
+        -DCMAKE_EXE_LINKER_FLAGS="-Wl,--allow-shlib-undefined" && \
     cmake --build . --config Release -j$(nproc) --target llama-server llama-cli || make -j$(nproc) llama-server llama-cli
 
 # Runtime stage
