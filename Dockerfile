@@ -24,7 +24,9 @@ RUN cd /tmp/llama.cpp && \
     cmake .. \
         -DGGML_CUDA=ON \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc && \
+        -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_TESTING=OFF && \
     cmake --build . --config Release -j$(nproc)
 
 # Runtime stage
