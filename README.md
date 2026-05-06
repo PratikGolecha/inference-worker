@@ -4,7 +4,12 @@
 
 # Serverless llama.cpp inference worker for RunPod
 
-This repository contains a serverless inference worker for running llama.cpp models on RunPod. It uses the `llama-server` image to provide an API for interacting with the models.
+This repository contains a serverless inference worker for running llama.cpp models on RunPod. It uses the `llama-server` to provide an API for interacting with the models.
+
+**Forks:**
+- **Upstream:** [Jacob-ML/inference-worker](https://github.com/Jacob-ML/inference-worker) - Original inference worker
+- **TurboQuant CUDA fork:** [TheTom/llama-cpp-turboquant](https://github.com/TheTom/llama-cpp-turboquant) - llama.cpp with TurboQuant KV-cache compression
+
 The following OpenAI API endpoints are supported:
 
 - `v1/models`
@@ -15,7 +20,22 @@ Streaming responses is also supported.
 
 **Important!** This project is still relatively new. Please [open a new issue](https://github.com/Jacob-ML/inference-worker/issues/new) if you encounter any problems in order to get help.
 
-**This is a fork of [SvenBrnn's `runpod-worker-ollama`](https://github.com/SvenBrnn/runpod-worker-ollama).**
+## What's New - TurboQuant Build
+
+This fork adds **TurboQuant KV-cache compression** support via a custom multi-stage Docker build:
+
+- **CUDA 12.8** base image with Blackwell compute capability (sm_100)
+- **TurboQuant fork** replaces vanilla llama.cpp for 5x KV cache compression
+- **Multi-stage build** compiles CUDA kernels from source with ccache support
+- **Minimal changes** - Only `Dockerfile` modified; all other files restored to match upstream
+
+## Build Details
+
+The Dockerfile uses a multi-stage build:
+1. **Builder stage:** Clones `TheTom/llama-cpp-turboquant`, compiles with CUDA 12.8 + ccache
+2. **Runtime stage:** Copies only `llama-server` and `llama-cli` binaries
+
+**Docker image:** `ghcr.io/pratikgolecha/inference-worker:latest`
 
 ## Setup
 
