@@ -40,6 +40,7 @@ RUN --mount=type=cache,target=/ccache \
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 # Copy TurboQuant binaries and shared libraries from builder
 COPY --from=builder /tmp/llama.cpp/build/bin/ /app/
+COPY --from=builder /tmp/llama.cpp/build/lib/ /app/
 
 RUN chmod +x /app/llama-server && \
     (chmod +x /app/llama-cli 2>/dev/null || true) && \
