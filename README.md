@@ -28,6 +28,7 @@ This fork adds **TurboQuant KV-cache compression** support via a custom multi-st
 - **TurboQuant fork** replaces vanilla llama.cpp for 5x KV cache compression
 - **Multi-stage build** compiles CUDA kernels from source with ccache support
 - **Minimal changes** - Only `Dockerfile` modified; all other files restored to match upstream
+- **v1.4 release:** Fixes symlink/chmod build failures for missing files (commit d19f532)
 
 ## Build Details
 
@@ -53,3 +54,4 @@ The worker can be configured via environment variables set in the RunPod hub con
 Please see the [LICENSE](./LICENSE) file for more information.
 
 [![Runpod badge](https://api.runpod.io/badge/Jacob-ML/inference-worker)](https://console.runpod.io/hub/Jacob-ML/inference-worker)
+[![Runpod](https://api.runpod.io/badge/PratikGolecha/inference-worker)](https://console.runpod.io/hub/PratikGolecha/inference-worker)
