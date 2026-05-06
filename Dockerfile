@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 RUN cmake --version && nvcc --version
 
 # Clone TurboQuant fork
-RUN git clone https://github.com/turbo-tan/llama.cpp-tq3.git /tmp/llama.cpp
+RUN git clone https://github.com/TheTom/llama-cpp-turboquant.git /tmp/llama.cpp
 
 # Build with explicit CUDA paths
 # Build with explicit CUDA paths and persistent ccache
@@ -27,12 +27,13 @@ RUN --mount=type=cache,target=/ccache \
     mkdir -p build && cd build && \
     cmake .. \
         -DGGML_CUDA=ON \
+        -DCMAKE_CUDA_ARCHITECTURES="121" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
         -DGGML_CCACHE=ON \
         -DBUILD_EXAMPLES=OFF \
         -DBUILD_TESTING=OFF && \
-    cmake --build . --config Release -j$(nproc)
+    cmake --build . --config Release -j$(nproc) || make -j$(nproc)
 
 # Runtime stage
 FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
