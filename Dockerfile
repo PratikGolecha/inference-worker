@@ -1,5 +1,5 @@
 # Build llama.cpp-tq3 (TurboQuant) from source with CUDA support
-FROM nvidia/cuda:12.4.0-devel-ubuntu22.04 AS builder
+FROM nvidia/cuda:12.8.0-devel-ubuntu22.04 AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/ccache \
     mkdir -p build && cd build && \
     cmake .. \
         -DGGML_CUDA=ON \
-        -DCMAKE_CUDA_ARCHITECTURES="121" \
+        -DCMAKE_CUDA_ARCHITECTURES="100" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
         -DGGML_CCACHE=ON \
