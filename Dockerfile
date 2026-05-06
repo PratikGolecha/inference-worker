@@ -40,8 +40,8 @@ RUN --mount=type=cache,target=/ccache \
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 
 # Copy TurboQuant binaries from builder
-COPY --from=builder /tmp/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
-COPY --from=builder /tmp/llama.cpp/build/bin/llama-cli /usr/local/bin/llama-cli
+COPY --from=builder /tmp/llama.cpp/build/bin/llama-server /app/llama-server
+COPY --from=builder /tmp/llama.cpp/build/bin/llama-cli /app/llama-cli
 
 ENV PYTHONUNBUFFERED=1
 
