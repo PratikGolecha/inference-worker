@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     python3 \
     python3-pip \
+    ccache \
     && rm -rf /var/lib/apt/lists/*
 
 # Verify cmake and CUDA are available
@@ -25,6 +26,7 @@ RUN cd /tmp/llama.cpp && \
         -DGGML_CUDA=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
+        -DGGML_CCACHE=ON \
         -DBUILD_EXAMPLES=OFF \
         -DBUILD_TESTING=OFF && \
     cmake --build . --config Release -j$(nproc)
