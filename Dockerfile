@@ -33,6 +33,7 @@ RUN --mount=type=cache,target=/ccache \
         -DGGML_CCACHE=ON \
         -DLLAMA_BUILD_EXAMPLES=OFF \
         -DLLAMA_BUILD_TESTS=OFF \
+        -DBUILD_SHARED_LIBS=ON \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,--allow-shlib-undefined" && \
     cmake --build . --config Release -j$(nproc) --target llama-server llama-cli || make -j$(nproc) llama-server llama-cli
 
