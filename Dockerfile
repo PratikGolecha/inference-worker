@@ -34,14 +34,16 @@ RUN --mount=type=cache,target=/ccache \
         -DLLAMA_BUILD_EXAMPLES=OFF \
         -DLLAMA_BUILD_TESTS=OFF \
         -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_INSTALL_PREFIX=/tmp/llama-install \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,--allow-shlib-undefined" && \
-    cmake --build . --config Release -j$(nproc) --target llama-server llama-cli || make -j$(nproc) llama-server llama-cli
+    cmake --build . --config Release -j$(nproc) --target llama-server llama-cli || make -j$(nproc) llama-server llama-cli && \
+    cmake --install . --prefix /tmp/llama-install
 
 # Runtime stage
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
-# Copy TurboQuant binaries and shared libraries from builder
-COPY --from=builder /tmp/llama.cpp/build/bin/ /app/
-COPY --from=builder /tmp/llama.cpp/build/lib/ /app/
+# Copy TurboQuant binaries and shared libraries from builder install directory
+COPY --from=builder /tmp/llama-install/bin/ /app/
+COPY --from=builder /tmp/llama-install/lib/ /app/
 
 RUN chmod +x /app/llama-server && \
     (chmod +x /app/llama-cli 2>/dev/null || true) && \
