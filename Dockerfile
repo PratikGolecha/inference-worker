@@ -38,16 +38,17 @@ RUN --mount=type=cache,target=/ccache \
 
 # Runtime stage
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
-
 # Copy TurboQuant binaries and shared libraries from builder
 COPY --from=builder /tmp/llama.cpp/build/bin/ /app/
-RUN chmod +x /app/llama-server /app/llama-cli && \
+
+RUN chmod +x /app/llama-server && \
+    (chmod +x /app/llama-cli 2>/dev/null || true) && \
     ldconfig /app && \
-    ln -sf /app/libllama.so /app/libllama.so.0 && \
-    ln -sf /app/libllama-common.so /app/libllama-common.so.0 && \
-    ln -sf /app/libggml.so /app/libggml.so.0 && \
-    ln -sf /app/libggml-cuda.so /app/libggml-cuda.so.0 && \
-    ln -sf /app/libmtmd.so /app/libmtmd.so.0
+    ln -sf /app/libllama.so /app/libllama.so.0 2>/dev/null || true && \
+    ln -sf /app/libllama-common.so /app/libllama-common.so.0 2>/dev/null || true && \
+    ln -sf /app/libggml.so /app/libggml.so.0 2>/dev/null || true && \
+    ln -sf /app/libggml-cuda.so /app/libggml-cuda.so.0 2>/dev/null || true && \
+    ln -sf /app/libmtmd.so /app/libmtmd.so.0 2>/dev/null || true
 ENV LD_LIBRARY_PATH=/app:$LD_LIBRARY_PATH
 
 ENV PYTHONUNBUFFERED=1
