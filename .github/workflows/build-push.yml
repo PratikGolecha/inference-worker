@@ -1,11 +1,12 @@
-name: Build and Push to GHCR
+name: Build and Push to GHCR (Manual)
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Only manual trigger - GitHub Actions cannot build CUDA images
+    inputs:
+      tags:
+        description: 'Docker image tags (comma-separated, e.g., latest,v0.1.0)'
+        required: false
+        default: 'latest'
 
 jobs:
   build-and-push:
@@ -26,22 +27,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=sha
-            latest
-      
-      - name: Build and push Docker image
+      - name: Build and push Docker image (CPU-only fallback)
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.sha }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ghcr.io/${{ github.repository }}:cpu-fallback
+          build-args: |
+            CUDA_AVAILABLE=false
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.description=CPU-only fallback (GitHub Actions cannot build CUDA images)
+      
+      - name: Warning
+        run: |
+          echo "⚠️ This is a CPU-only fallback build!"
+          echo "For CUDA/TurboQuant support, build locally and push:"
+          echo "  docker build -t ghcr.io/${{ github.repository }}:latest ."
+          echo "  docker push ghcr.io/${{ github.repository }}:latest"
