@@ -37,7 +37,9 @@ RUN --mount=type=cache,target=/ccache \
         -DCMAKE_INSTALL_PREFIX=/tmp/llama-install \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,--allow-shlib-undefined" && \
     cmake --build . --config Release -j$(nproc) --target llama-server llama-cli || make -j$(nproc) llama-server llama-cli && \
-    cmake --install . --prefix /tmp/llama-install
+    mkdir -p /tmp/llama-install/bin /tmp/llama-install/lib && \
+    cp bin/llama-server bin/llama-cli /tmp/llama-install/bin/ && \
+    find lib/ -name "*.so*" -exec cp {} /tmp/llama-install/lib/ \;
 
 # Runtime stage
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
