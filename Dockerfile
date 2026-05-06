@@ -12,11 +12,20 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone TurboQuant fork and build
-RUN git clone --depth 1 https://github.com/turbo-tan/llama.cpp-tq3.git /tmp/llama.cpp && \
-    cd /tmp/llama.cpp && \
-    cmake -B build -DGGML_CUDA=ON -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build build --config Release -j$(nproc)
+# Verify cmake and CUDA are available
+RUN cmake --version && nvcc --version
+
+# Clone TurboQuant fork
+RUN git clone https://github.com/turbo-tan/llama.cpp-tq3.git /tmp/llama.cpp
+
+# Build with explicit CUDA paths
+RUN cd /tmp/llama.cpp && \
+    mkdir -p build && cd build && \
+    cmake .. \
+        -DGGML_CUDA=ON \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc && \
+    cmake --build . --config Release -j$(nproc)
 
 # Runtime stage
 FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
