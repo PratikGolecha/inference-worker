@@ -31,12 +31,13 @@ RUN --mount=type=cache,target=/ccache \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
         -DGGML_CCACHE=ON \
-        -DBUILD_EXAMPLES=OFF \
-        -DBUILD_TESTING=OFF && \
+        -DLLAMA_BUILD_EXAMPLES=OFF \
+        -DLLAMA_BUILD_TESTS=OFF \
+        -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/cuda/lib64/stubs" && \
     cmake --build . --config Release -j$(nproc) || make -j$(nproc)
 
 # Runtime stage
-FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 
 # Copy TurboQuant binaries from builder
 COPY --from=builder /tmp/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
