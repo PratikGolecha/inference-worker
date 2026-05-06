@@ -18,6 +18,13 @@ RUN git clone --depth 1 https://github.com/turbo-tan/llama.cpp-tq3.git /tmp/llam
     cmake -B build -DGGML_CUDA=ON -DCMAKE_BUILD_TYPE=Release && \
     cmake --build build --config Release -j$(nproc)
 
+# Runtime stage
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+
+# Copy TurboQuant binaries from builder
+COPY --from=builder /tmp/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
+COPY --from=builder /tmp/llama.cpp/build/bin/llama-cli /usr/local/bin/llama-cli
+
 ENV PYTHONUNBUFFERED=1
 
 # Set up the working directory
@@ -51,10 +58,6 @@ ADD ./src /work
 
 # Install runpod and its dependencies
 RUN pip install -r ./requirements.txt && chmod +x /work/start.sh
-
-# Copy the TurboQuant-enabled llama-server binary from builder
-COPY --from=builder /tmp/llama.cpp/build/bin/llama-server /usr/local/bin/llama-server
-COPY --from=builder /tmp/llama.cpp/build/bin/llama-cli /usr/local/bin/llama-cli
 
 # Set the entrypoint
 ENTRYPOINT ["/bin/sh", "-c", "/work/start.sh"]
