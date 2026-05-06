@@ -20,7 +20,10 @@ RUN cmake --version && nvcc --version
 RUN git clone https://github.com/turbo-tan/llama.cpp-tq3.git /tmp/llama.cpp
 
 # Build with explicit CUDA paths
-RUN cd /tmp/llama.cpp && \
+# Build with explicit CUDA paths and persistent ccache
+RUN --mount=type=cache,target=/ccache \
+    export CCACHE_DIR=/ccache && \
+    cd /tmp/llama.cpp && \
     mkdir -p build && cd build && \
     cmake .. \
         -DGGML_CUDA=ON \
